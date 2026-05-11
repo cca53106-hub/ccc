@@ -17,6 +17,10 @@ service cloud.firestore {
              request.auth.token.email_verified == true;
     }
 
+    function isAdmin() {
+      return isOwner('mehaalkhan.2@gmail.com');
+    }
+
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -36,21 +40,44 @@ service cloud.firestore {
              data.url is string && data.url.size() <= 1000 &&
              data.alt is string && data.alt.size() <= 200 &&
              data.uploadedBy == 'mehaalkhan.2@gmail.com' &&
-             data.createdAt == request.time;
+             data.createdAt is timestamp; // or request.time
     }
 
-    // Collection match
-    match /achievements_gallery/{imageId} {
-      // 8. Secure List Queries: Explicitly allow reading
-      allow read: if true; 
+    function isValidBroadcast(data) {
+      return data.keys().hasAll(['title', 'body', 'sentAt', 'sender']) &&
+             data.keys().size() == 4 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.body is string && data.body.size() <= 5000 &&
+             data.sender == 'mehaalkhan.2@gmail.com';
+    }
 
-      // 1. Mandatory Size Enforcements & Identity Integrity
-      allow create: if isOwner('mehaalkhan.2@gmail.com') && 
-                      isValidId(imageId) && 
-                      isValidGalleryImage(incoming());
-      
-      // Prevent any updates or deletions for now to keep it immortal
+    function isValidPushToken(data) {
+      return data.keys().hasAll(['token', 'uid', 'updatedAt']) &&
+             data.keys().size() == 3 &&
+             data.token is string && data.token.size() <= 500 &&
+             data.uid is string && (data.uid == request.auth.uid || data.uid == 'anonymous');
+    }
+
+    // Collection matches
+    match /achievements_gallery/{imageId} {
+      allow read: if true; 
+      allow create: if isAdmin() && 
+                       isValidId(imageId) && 
+                       isValidGalleryImage(incoming());
       allow update, delete: if false;
+    }
+
+    match /broadcasts/{broadcastId} {
+      allow read: if true; // Everyone can see broadcasts in MessageCenter
+      allow create: if isAdmin() && isValidBroadcast(incoming());
+      allow update, delete: if false;
+    }
+
+    match /push_tokens/{tokenId} {
+       // Only allow setting your own token
+       allow get: if isSignedIn() && (existing().uid == request.auth.uid || tokenId == request.auth.uid);
+       allow create, update: if isValidPushToken(incoming());
+       allow list, delete: if false;
     }
   }
 }

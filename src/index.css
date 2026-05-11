@@ -14,11 +14,11 @@
   --color-text-main: #3D3D3D;
   --color-text-muted: #8B7E66;
   --color-text-light: #6B6B6B;
+}
 
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 .animate-marquee {

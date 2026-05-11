@@ -1,6 +1,7 @@
 import React from 'react';
-import { BookOpen, MapPin, Phone, Mail, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Mail, ChevronRight, Shield } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.tsx';
+import ScaLogo from './ScaLogo.tsx';
 
 export default function Footer() {
   const { language } = useLanguage();
@@ -59,9 +60,7 @@ export default function Footer() {
           {/* Logo & About */}
           <div className="col-span-1 lg:col-span-1">
             <div className={`flex items-center gap-3 mb-6 ${language === 'ur' ? 'flex-row-reverse' : ''}`}>
-              <div className="bg-primary p-2 rounded-lg shrink-0">
-                <BookOpen size={24} />
-              </div>
+              <ScaLogo className="w-10 h-10" />
               <div className={language === 'ur' ? 'text-right' : 'text-left'}>
                 <span className="font-bold text-xl tracking-tight block leading-none">SCA KARAK</span>
                 <span className="text-[10px] uppercase font-bold tracking-widest text-text-muted mt-1 inline-block">Science Coaching Academy</span>

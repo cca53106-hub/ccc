@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Star, Target, Zap, Upload, LogIn, LogOut, Loader2, Plus, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.tsx';
-import { db, auth, loginWithGoogle, logout } from '../lib/firebase.ts';
+import { 
+  db, 
+  auth, 
+  loginWithGoogle, 
+  logout,
+  handleFirestoreError,
+  OperationType 
+} from '../lib/firebase.ts';
 import musanifImg from '../assets/images/regenerated_image_1778053842480.png';
 import campusLifeImg from '../assets/images/regenerated_image_1778054334747.png';
 import { 
@@ -15,40 +22,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
+// Types and helpers imported from firebase.ts
 
 const staticGalleryImages = [
   { url: musanifImg, alt: 'Science Academy Karak' },

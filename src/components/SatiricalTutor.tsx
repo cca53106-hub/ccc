@@ -8,7 +8,9 @@ import { useLanguage } from '../context/LanguageContext.tsx';
 let aiInstance: GoogleGenAI | null = null;
 const getAI = () => {
   if (!aiInstance) {
+    // Access via process.env.GEMINI_API_KEY which is replaced by Vite define at build time
     const key = process.env.GEMINI_API_KEY;
+    
     if (!key) {
       console.warn("GEMINI_API_KEY is missing. AI features will be disabled.");
       return null;

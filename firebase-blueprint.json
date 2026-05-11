@@ -24,12 +24,43 @@
         }
       },
       "required": ["url", "alt", "uploadedBy", "createdAt"]
+    },
+    "Broadcast": {
+      "title": "Broadcast",
+      "description": "A notification broadcast sent by the admin.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "sender": { "type": "string" }
+      },
+      "required": ["title", "body", "sentAt", "sender"]
+    },
+    "PushToken": {
+      "title": "Push Token",
+      "description": "An FCM push token for a user.",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "uid": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["token", "uid", "updatedAt"]
     }
   },
   "firestore": {
     "achievements_gallery/{imageId}": {
       "schema": "GalleryImage",
       "description": "Collection of gallery images for the achievements section."
+    },
+    "broadcasts/{broadcastId}": {
+      "schema": "Broadcast",
+      "description": "Admmin broadcasts sent to all victims."
+    },
+    "push_tokens/{tokenId}": {
+      "schema": "PushToken",
+      "description": "Storage for FCM push tokens."
     }
   }
 }

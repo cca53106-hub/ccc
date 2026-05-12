@@ -8,21 +8,43 @@ export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showNotifyBtn, setShowNotifyBtn] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
+    // Detect iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(iOS);
+
+    // Detect if already installed
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    setIsStandalone(standalone);
+
     const handleBeforeInstall = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true);
+      if (!standalone) {
+        setShowPrompt(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
+    // If it's iOS and not standalone, we might want to show the prompt manually
+    if (iOS && !standalone) {
+      const timer = setTimeout(() => setShowPrompt(true), 3000);
+      return () => clearTimeout(timer);
+    }
+
     const handleCustomInstall = () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
+      } else if (iOS && !standalone) {
+        setShowPrompt(true);
+      } else if (standalone) {
+        alert(language === 'ur' ? "ایپ پہلے ہی انسٹال ہے!" : "App is already installed!");
       } else {
-        alert(language === 'ur' ? "ایپ پہلے ہی انسٹال ہے یا براؤزر سپورٹ نہیں کرتا۔" : "App is already installed or browser doesn't support install.");
+        alert(language === 'ur' ? "براؤزر سپورٹ نہیں کرتا۔ براہ کرم کروم استعمال کریں۔" : "Browser doesn't support automatic install. Please use Chrome or Safari (iOS).");
       }
     };
     window.addEventListener('pwa-install-request', handleCustomInstall);
@@ -34,6 +56,10 @@ export default function InstallPrompt() {
   }, [deferredPrompt, language]);
 
   const handleInstall = async () => {
+    if (isIOS) {
+      // iOS doesn't have programmatic prompt, we just show instructions (which is our UI)
+      return;
+    }
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
@@ -66,16 +92,20 @@ export default function InstallPrompt() {
     en: {
       download: "Download SCA App",
       installDesc: "Install for full academic disaster experience.",
+      iosPrompt: "To install: tap the Share button and select 'Add to Home Screen'.",
       notify: "Enable Alerts",
       notifyDesc: "Get notified when we steal more fees.",
-      notNow: "I'd rather be safe"
+      notNow: "I'd rather be safe",
+      installBtn: "Install Now"
     },
     ur: {
       download: "ایس سی اے ایپ ڈاؤن لوڈ کریں",
       installDesc: "مکمل تعلیمی تباہی کے تجربے کے لیے انسٹال کریں۔",
+      iosPrompt: "انسٹال کرنے کے لیے: شیئر بٹن دبائیں اور 'ہوم اسکرین پر شامل کریں' منتخب کریں۔",
       notify: "اطلاعات آن کریں",
       notifyDesc: "جب ہم مزید فیسیں چرائیں گے تو مطلع کریں۔",
-      notNow: "میں نہیں چاہتا"
+      notNow: "میں نہیں چاہتا",
+      installBtn: "انسٹال کریں"
     }
   }[language];
 
@@ -96,19 +126,23 @@ export default function InstallPrompt() {
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-primary-dark">{t.download}</h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">{t.installDesc}</p>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  {isIOS ? t.iosPrompt : t.installDesc}
+                </p>
                 <div className="flex gap-3 mt-4">
-                  <button 
-                    onClick={handleInstall}
-                    className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg hover:bg-primary-dark transition-all"
-                  >
-                    Install Now
-                  </button>
+                  {!isIOS && (
+                    <button 
+                      onClick={handleInstall}
+                      className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg hover:bg-primary-dark transition-all"
+                    >
+                      {t.installBtn}
+                    </button>
+                  )}
                   <button 
                     onClick={() => setShowPrompt(false)}
                     className="text-[10px] font-black uppercase tracking-widest text-text-muted px-4 py-2 hover:bg-base rounded-lg transition-all"
                   >
-                    {t.notNow}
+                    {isIOS ? "Got it" : t.notNow}
                   </button>
                 </div>
               </div>

@@ -80,14 +80,14 @@ export default function Hero() {
           >
             <button 
               onClick={() => document.getElementById('enrollment-form')?.scrollIntoView({ behavior: 'smooth' })}
-              className="w-full sm:w-auto bg-primary text-white px-10 py-4 rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
             >
               {t.explore}
               <ArrowRight size={20} />
             </button>
             <button 
               onClick={() => document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth' })}
-              className="w-full sm:w-auto px-10 py-4 rounded-2xl text-base font-bold text-primary border-2 border-primary hover:bg-white/50 transition-all font-serif italic"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-bold text-primary border-2 border-primary hover:bg-white/50 transition-all font-serif italic cursor-pointer"
             >
               {t.merit}
             </button>

@@ -1,32 +1,31 @@
-const CACHE_NAME = 'sca-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
-
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          console.log('Clearing Service Worker Cache:', name);
+          return caches.delete(name);
+        })
+      );
+    })
+    .then(() => self.registration.unregister())
+    .then(() => self.clients.matchAll())
+    .then((clients) => {
+      clients.forEach((client) => {
+        if (client.navigate) {
+          client.navigate(client.url);
+        }
+      });
+    })
   );
 });
 
+// Bypass fetch intercepts entirely
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
-
-// Handle Push Notifications
-self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : { title: 'SCA Alert', body: 'Academic disaster detected!' };
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: 'https://cdn-icons-png.flaticon.com/512/3233/3233508.png',
-      badge: 'https://cdn-icons-png.flaticon.com/512/3233/3233508.png'
-    })
-  );
+  // Direct fetch from network to avoid any cache issues
+  return;
 });

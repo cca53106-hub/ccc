@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../lib/firebase.ts';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 
 // Static placeholder if database hasn't loaded or is empty
 import musanifImg from '../assets/images/regenerated_image_1778053842480.png';
@@ -245,9 +245,34 @@ export default function BugPrank() {
     window.addEventListener('spawn-bug', handleManualSpawn);
     window.addEventListener('sca-bug-sound-updated', handleSoundLinkChange);
 
+    // Subscribe to Firestore for global sound settings to make them play for clients also
+    const docRef = doc(db, 'sound_settings', 'global');
+    const unsubscribeSoundSettings = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        const sq = data.soundUrl || '';
+        const cr1 = data.crawlSoundUrl1 || '';
+        const cr2 = data.crawlSoundUrl2 || '';
+        const cr3 = data.crawlSoundUrl3 || '';
+
+        setCustomSoundUrl(sq);
+        setCustomCrawlSoundUrls([cr1, cr2, cr3].filter(Boolean));
+
+        // Sync to local storage for caching/faster load
+        localStorage.setItem('sca_bug_sound_url', sq);
+        localStorage.setItem('sca_bug_crawl_sound_url_1', cr1);
+        localStorage.setItem('sca_bug_crawl_sound_url', cr1);
+        localStorage.setItem('sca_bug_crawl_sound_url_2', cr2);
+        localStorage.setItem('sca_bug_crawl_sound_url_3', cr3);
+      }
+    }, (error) => {
+      console.warn('Guest visitor reading global sound settings fallback:', error);
+    });
+
     return () => {
       window.removeEventListener('spawn-bug', handleManualSpawn);
       window.removeEventListener('sca-bug-sound-updated', handleSoundLinkChange);
+      unsubscribeSoundSettings();
     };
   }, [images, customSoundUrl, customCrawlSoundUrls]);
 

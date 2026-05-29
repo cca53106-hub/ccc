@@ -7,7 +7,7 @@ import {
   Bug, Volume2, Upload, Trash2
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase.ts';
-import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext.tsx';
 
 export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -39,25 +39,48 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
     return localStorage.getItem('sca_bug_crawl_sound_url_3') || '';
   });
 
+  const syncSoundSettingsToFirebase = async (sqUrl: string, cr1: string, cr2: string, cr3: string) => {
+    try {
+      await setDoc(doc(db, 'sound_settings', 'global'), {
+        soundUrl: sqUrl || '',
+        crawlSoundUrl1: cr1 || '',
+        crawlSoundUrl2: cr2 || '',
+        crawlSoundUrl3: cr3 || '',
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.error('Failed to sync sound settings to Firebase:', err);
+    }
+  };
+
   const handleSoundUrlChange = (url: string) => {
     setSoundUrl(url);
     localStorage.setItem('sca_bug_sound_url', url);
     window.dispatchEvent(new CustomEvent('sca-bug-sound-updated'));
+    syncSoundSettingsToFirebase(url, crawlSoundUrl1, crawlSoundUrl2, crawlSoundUrl3);
   };
 
   const handleCrawlSoundUrlChange = (url: string, index: 1 | 2 | 3) => {
+    let newCr1 = crawlSoundUrl1;
+    let newCr2 = crawlSoundUrl2;
+    let newCr3 = crawlSoundUrl3;
+
     if (index === 1) {
       setCrawlSoundUrl1(url);
       localStorage.setItem('sca_bug_crawl_sound_url_1', url);
       localStorage.setItem('sca_bug_crawl_sound_url', url); // fallback
+      newCr1 = url;
     } else if (index === 2) {
       setCrawlSoundUrl2(url);
       localStorage.setItem('sca_bug_crawl_sound_url_2', url);
+      newCr2 = url;
     } else if (index === 3) {
       setCrawlSoundUrl3(url);
       localStorage.setItem('sca_bug_crawl_sound_url_3', url);
+      newCr3 = url;
     }
     window.dispatchEvent(new CustomEvent('sca-bug-sound-updated'));
+    syncSoundSettingsToFirebase(soundUrl, newCr1, newCr2, newCr3);
   };
 
   const handleSoundFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'crawl1' | 'crawl2' | 'crawl3' | 'squish') => {
@@ -85,6 +108,37 @@ export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClo
       reader.readAsDataURL(file);
     }
   };
+
+  // Real-time listener for global sound settings
+  useEffect(() => {
+    const docRef = doc(db, 'sound_settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        const sq = data.soundUrl || '';
+        const cr1 = data.crawlSoundUrl1 || '';
+        const cr2 = data.crawlSoundUrl2 || '';
+        const cr3 = data.crawlSoundUrl3 || '';
+
+        setSoundUrl(sq);
+        setCrawlSoundUrl1(cr1);
+        setCrawlSoundUrl2(cr2);
+        setCrawlSoundUrl3(cr3);
+
+        localStorage.setItem('sca_bug_sound_url', sq);
+        localStorage.setItem('sca_bug_crawl_sound_url_1', cr1);
+        localStorage.setItem('sca_bug_crawl_sound_url', cr1);
+        localStorage.setItem('sca_bug_crawl_sound_url_2', cr2);
+        localStorage.setItem('sca_bug_crawl_sound_url_3', cr3);
+
+        window.dispatchEvent(new CustomEvent('sca-bug-sound-updated'));
+      }
+    }, (error) => {
+      console.warn('Silent fallback for guest visitor sound config fetching:', error);
+    });
+
+    return () => unsubscribe();
+  }, [isOpen]);
 
   // Fetch visitors
   useEffect(() => {

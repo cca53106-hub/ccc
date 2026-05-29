@@ -98,5 +98,10 @@ service cloud.firestore {
       allow create, update: if isValidId(visitorId) && isValidVisitor(incoming());
       allow delete: if false;
     }
+
+    match /sound_settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

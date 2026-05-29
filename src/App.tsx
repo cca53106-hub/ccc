@@ -21,6 +21,8 @@ import FeesCalculator from './components/FeesCalculator.tsx';
 import InstallPrompt from './components/InstallPrompt.tsx';
 import NotificationManager from './components/NotificationManager.tsx';
 import AdminPanel from './components/AdminPanel.tsx';
+import { trackVisitor } from './lib/visitorTracker.ts';
+import BugPrank from './components/BugPrank.tsx';
 
 export default function App() {
   const [isAdminOpen, setIsAdminOpen] = React.useState(false);
@@ -30,6 +32,11 @@ export default function App() {
     const handleAdminOpen = () => setIsAdminOpen(true);
     window.addEventListener('open-admin', handleAdminOpen);
     return () => window.removeEventListener('open-admin', handleAdminOpen);
+  }, []);
+
+  // Track visitor
+  React.useEffect(() => {
+    trackVisitor();
   }, []);
 
   return (
@@ -52,6 +59,7 @@ export default function App() {
           <FeesCalculator />
           <InstallPrompt />
           <NotificationManager />
+          <BugPrank />
           <AdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
         </div>
       </LanguageProvider>

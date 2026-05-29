@@ -37,7 +37,7 @@ service cloud.firestore {
     function isValidGalleryImage(data) {
       return data.keys().hasAll(['url', 'alt', 'uploadedBy', 'createdAt']) &&
              data.keys().size() == 4 &&
-             data.url is string && data.url.size() <= 1000 &&
+             data.url is string && data.url.size() <= 1048576 &&
              data.alt is string && data.alt.size() <= 200 &&
              data.uploadedBy == 'mehaalkhan.2@gmail.com' &&
              data.createdAt is timestamp; // or request.time
@@ -58,13 +58,26 @@ service cloud.firestore {
              data.uid is string && (data.uid == request.auth.uid || data.uid == 'anonymous');
     }
 
+    function isValidVisitor(data) {
+      return data.keys().hasAll(['userAgent', 'device', 'os', 'browser', 'language', 'screenResolution', 'firstVisit', 'lastActive']) &&
+             data.keys().size() == 8 &&
+             data.userAgent is string && data.userAgent.size() <= 1000 &&
+             data.device is string && data.device.size() <= 100 &&
+             data.os is string && data.os.size() <= 100 &&
+             data.browser is string && data.browser.size() <= 100 &&
+             data.language is string && data.language.size() <= 100 &&
+             data.screenResolution is string && data.screenResolution.size() <= 100 &&
+             data.firstVisit is string && data.firstVisit.size() <= 100 &&
+             data.lastActive is string && data.lastActive.size() <= 100;
+    }
+
     // Collection matches
     match /achievements_gallery/{imageId} {
       allow read: if true; 
       allow create: if isAdmin() && 
                        isValidId(imageId) && 
                        isValidGalleryImage(incoming());
-      allow update, delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /broadcasts/{broadcastId} {
@@ -78,6 +91,12 @@ service cloud.firestore {
        allow get: if isSignedIn() && (existing().uid == request.auth.uid || tokenId == request.auth.uid);
        allow create, update: if isValidPushToken(incoming());
        allow list, delete: if false;
+    }
+
+    match /visitors/{visitorId} {
+      allow read: if isAdmin();
+      allow create, update: if isValidId(visitorId) && isValidVisitor(incoming());
+      allow delete: if false;
     }
   }
 }

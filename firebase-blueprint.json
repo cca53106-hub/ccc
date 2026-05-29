@@ -47,6 +47,22 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["token", "uid", "updatedAt"]
+    },
+    "Visitor": {
+      "title": "Visitor",
+      "description": "A tracked visitor of the website with their device information.",
+      "type": "object",
+      "properties": {
+        "userAgent": { "type": "string" },
+        "device": { "type": "string" },
+        "os": { "type": "string" },
+        "browser": { "type": "string" },
+        "language": { "type": "string" },
+        "screenResolution": { "type": "string" },
+        "firstVisit": { "type": "string", "format": "date-time" },
+        "lastActive": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userAgent", "device", "os", "browser", "language", "screenResolution", "firstVisit", "lastActive"]
     }
   },
   "firestore": {
@@ -61,6 +77,10 @@
     "push_tokens/{tokenId}": {
       "schema": "PushToken",
       "description": "Storage for FCM push tokens."
+    },
+    "visitors/{visitorId}": {
+      "schema": "Visitor",
+      "description": "Collection of tracked website visitors and their devices."
     }
   }
 }

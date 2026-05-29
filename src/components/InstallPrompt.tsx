@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, Bell, X, Info } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.tsx';
@@ -10,6 +10,12 @@ export default function InstallPrompt() {
   const [showNotifyBtn, setShowNotifyBtn] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  const deferredPromptRef = useRef<any>(null);
+
+  useEffect(() => {
+    deferredPromptRef.current = deferredPrompt;
+  }, [deferredPrompt]);
 
   useEffect(() => {
     // Detect iOS
@@ -31,14 +37,15 @@ export default function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
     // If it's iOS and not standalone, we might want to show the prompt manually
+    let timer: any = null;
     if (iOS && !standalone) {
-      const timer = setTimeout(() => setShowPrompt(true), 3000);
-      return () => clearTimeout(timer);
+      timer = setTimeout(() => setShowPrompt(true), 3000);
     }
 
     const handleCustomInstall = () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
+      const activePrompt = deferredPromptRef.current;
+      if (activePrompt) {
+        activePrompt.prompt();
       } else if (iOS && !standalone) {
         setShowPrompt(true);
       } else if (standalone) {
@@ -52,8 +59,9 @@ export default function InstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('pwa-install-request', handleCustomInstall);
+      if (timer) clearTimeout(timer);
     };
-  }, [deferredPrompt, language]);
+  }, [language]);
 
   const handleInstall = async () => {
     if (isIOS) {

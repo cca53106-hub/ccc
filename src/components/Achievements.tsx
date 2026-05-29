@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Star, Target, Zap, Upload, LogIn, LogOut, Loader2, Plus, X } from 'lucide-react';
+import { Trophy, Star, Target, Zap, Upload, LogIn, LogOut, Loader2, Plus, X, Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { 
   db, 
@@ -19,7 +19,9 @@ import {
   orderBy, 
   onSnapshot, 
   serverTimestamp,
-  Timestamp 
+  Timestamp,
+  doc,
+  deleteDoc
 } from 'firebase/firestore';
 
 // Types and helpers imported from firebase.ts
@@ -110,6 +112,19 @@ export default function Achievements() {
       setError('Failed to upload image metadata.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAdmin) return;
+    
+    setError(null);
+    try {
+      await deleteDoc(doc(db, 'achievements_gallery', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `achievements_gallery/${id}`);
+      setError(language === 'ur' ? 'تصویر ڈیلیٹ کرنے میں ناکامی۔' : 'Failed to delete image.');
     }
   };
 
@@ -302,6 +317,15 @@ export default function Achievements() {
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {isAdmin && (
+                  <button
+                    onClick={(e) => handleDelete(img.id, e)}
+                    className="absolute top-3 right-3 bg-red-600 shadow-md hover:bg-red-700 hover:scale-110 transition-all p-2 rounded-full text-white z-20 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                    title={language === 'ur' ? 'حذف کریں' : 'Delete Image'}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </motion.div>
             ))}
           </div>

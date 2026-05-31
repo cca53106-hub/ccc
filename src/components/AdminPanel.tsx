@@ -7,7 +7,7 @@ import {
   Bug, Volume2, Upload, Trash2
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase.ts';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext.tsx';
 
 export default function AdminPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

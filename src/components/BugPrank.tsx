@@ -186,25 +186,40 @@ export default function BugPrank() {
     const chosenCorner = forcedCorner || corners[Math.floor(Math.random() * corners.length)];
     const w = dimensions.current.width;
     const h = dimensions.current.height;
+    const isMobile = w < 768;
+
+    // Bug size and attributes (scaled down on mobile for elegance and playability)
+    const size = isMobile
+      ? Math.floor(Math.random() * 20) + 35  // 35px to 55px on mobile
+      : Math.floor(Math.random() * 45) + 40; // 40px to 85px on desktop
 
     // Determine coordinate based on corner
     let startX = 0;
     let startY = 0;
-    switch (chosenCorner) {
-      case 'TL': startX = -60; startY = -60; break;
-      case 'TR': startX = w + 60; startY = -60; break;
-      case 'BL': startX = -60; startY = h + 60; break;
-      case 'BR': startX = w + 60; startY = h + 60; break;
+    if (isMobile) {
+      // On mobile, spawn directly inside bounds with a healthy margin so it behaves elegantly and is seen directly
+      const margin = 20;
+      switch (chosenCorner) {
+        case 'TL': startX = margin; startY = margin; break;
+        case 'TR': startX = w - size - margin; startY = margin; break;
+        case 'BL': startX = margin; startY = h - size - margin; break;
+        case 'BR': startX = w - size - margin; startY = h - size - margin; break;
+      }
+    } else {
+      switch (chosenCorner) {
+        case 'TL': startX = -60; startY = -60; break;
+        case 'TR': startX = w + 60; startY = -60; break;
+        case 'BL': startX = -60; startY = h + 60; break;
+        case 'BR': startX = w + 60; startY = h + 60; break;
+      }
     }
 
-    // Bug size and attributes
-    const size = Math.floor(Math.random() * 45) + 40; // 40px to 85px
     const randomImage = images[Math.floor(Math.random() * images.length)];
     const id = `bug_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     // Initial bug trajectory scuttles toward screen center with mild offset
-    const targetX = w / 2 + (Math.random() * 200 - 100);
-    const targetY = h / 2 + (Math.random() * 200 - 100);
+    const targetX = w / 2 + (Math.random() * (isMobile ? 120 : 200) - (isMobile ? 60 : 100));
+    const targetY = h / 2 + (Math.random() * (isMobile ? 120 : 200) - (isMobile ? 60 : 100));
 
     const initialAngle = Math.atan2(targetY - startY, targetX - startX) * (180 / Math.PI) + 90;
 
@@ -217,7 +232,7 @@ export default function BugPrank() {
       tx: targetX,
       ty: targetY,
       angle: initialAngle,
-      speed: Math.random() * 1.5 + 1.2, // 1.2 to 2.7px per tick
+      speed: isMobile ? Math.random() * 1.0 + 1.0 : Math.random() * 1.5 + 1.2, // 1.2 to 2.7px per tick, slightly chill on mobile
       state: 'crawling',
       corner: chosenCorner,
       legWiggle: 0,
@@ -309,11 +324,16 @@ export default function BugPrank() {
           // Leg wiggle frequency
           const legWiggle = (bug.legWiggle + 1) % 360;
 
+          const isMobileMode = dimensions.current.width < 768;
+
           if (dist < 15) {
-            // Pick a new random target inside the viewport margins
-            const pad = 100;
-            const tx = Math.random() * (dimensions.current.width - pad * 2) + pad;
-            const ty = Math.random() * (dimensions.current.height - pad * 2) + pad;
+            // Pick a new random target inside the viewport margins dynamically
+            const pad = isMobileMode ? 30 : 100;
+            // Bound checks to avoid division-by-zero or negative boundaries
+            const viewW = Math.max(120, dimensions.current.width);
+            const viewH = Math.max(120, dimensions.current.height);
+            const tx = Math.random() * (viewW - pad * 2) + pad;
+            const ty = Math.random() * (viewH - pad * 2) + pad;
             const angle = Math.atan2(ty - bug.y, tx - bug.x) * (180 / Math.PI) + 90;
             return {
               ...bug,
@@ -322,7 +342,7 @@ export default function BugPrank() {
               angle,
               legWiggle,
               // Random rest or rush speed changes
-              speed: Math.random() < 0.25 ? 0.3 : Math.random() * 2 + 1.2
+              speed: Math.random() < 0.25 ? 0.3 : Math.random() * (isMobileMode ? 1.2 : 2.0) + 1.2
             };
           }
 
@@ -334,10 +354,16 @@ export default function BugPrank() {
           // Tiny erratic wiggle offset for crawling organic effect
           const wiggleAngle = Math.sin(legWiggle * 0.15) * 4;
 
+          // On mobile screens, hard-clamp the position to completely prevent scrollbars/jumping out of boundaries
+          const maxClampW = dimensions.current.width - bug.size;
+          const maxClampH = dimensions.current.height - bug.size;
+          const finalX = isMobileMode ? Math.max(0, Math.min(maxClampW, nextX)) : nextX;
+          const finalY = isMobileMode ? Math.max(0, Math.min(maxClampH, nextY)) : nextY;
+
           return {
             ...bug,
-            x: nextX,
-            y: nextY,
+            x: finalX,
+            y: finalY,
             angle: bug.angle,
             legWiggle,
           };
